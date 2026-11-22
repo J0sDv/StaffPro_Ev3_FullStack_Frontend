@@ -1,33 +1,47 @@
 import { useState } from 'react';
-import { Row, Col, Form, Button, Card } from 'react-bootstrap';
+import { Row, Col, Form, Button, Card, Alert } from 'react-bootstrap'; 
 import TablaTrabajadores from './TablaTrabajadores';
 import ModalAsignar from './ModalAsignar';
+import EstadoCarga from './EstadoCarga';  
 import useColeccion from '../hooks/useColeccion';
- 
+import { put } from '../services/api';
+
 // Catalogo de trabajadores con filtros y asignacion a un cliente.
 export default function PanelAsignacion() {
-  const { datos: trabajadores, modificar } = useColeccion('trabajadores');
+  const { datos: trabajadores, cargando, error, recargar } = useColeccion('trabajadores');   
   const [especialidad, setEspecialidad] = useState('todas');
   const [estado, setEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [seleccionado, setSeleccionado] = useState(null);
- 
+  const [errorAsignar, setErrorAsignar] = useState('');  
+
   const especialidades = [...new Set(trabajadores.map((t) => t.especialidad))];
- 
+
   const texto = busqueda.trim().toLowerCase();
   const filtrados = trabajadores.filter((t) =>
     (especialidad === 'todas' || t.especialidad === especialidad) &&
     (estado === 'todos' || t.estado === estado) &&
     (t.nombre.toLowerCase().includes(texto) || t.rut.toLowerCase().includes(texto))
   );
- 
-  const confirmar = (trabajador, cliente) => {
-    modificar(trabajador.id, { estado: 'En turno', cliente });
-    setSeleccionado(null);
+
+  const confirmar = async (trabajador, cliente) => {
+    try {
+      await put(`/trabajadores/${trabajador.id}/asignacion`, { cliente });
+      await recargar();
+      setErrorAsignar('');
+      setSeleccionado(null);
+    } catch (e) {
+      setErrorAsignar(e.message);
+      setSeleccionado(null);   
+    }
   };
- 
+
   return (
     <>
+      {/* error de la asignacion y estado de carga */}
+      {errorAsignar && <Alert variant="danger">{errorAsignar}</Alert>}
+      <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
+
       <Row className="g-3 mb-4 align-items-end">
         <Col md={4}>
           <Form.Label htmlFor="filtroEspecialidad">Filtrar por especialidad</Form.Label>
@@ -50,7 +64,7 @@ export default function PanelAsignacion() {
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         </Col>
       </Row>
- 
+
       <Card as="article" className="shadow-sm border-0">
         <Card.Body className="p-0">
           <TablaTrabajadores
@@ -64,7 +78,7 @@ export default function PanelAsignacion() {
         </Card.Body>
       </Card>
       <p className="text-muted small mt-2">{filtrados.length} de {trabajadores.length} trabajadores</p>
- 
+
       <ModalAsignar trabajador={seleccionado} onConfirmar={confirmar} onCerrar={() => setSeleccionado(null)} />
     </>
   );

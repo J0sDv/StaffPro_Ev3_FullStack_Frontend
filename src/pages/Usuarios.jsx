@@ -1,61 +1,73 @@
 import { useState } from 'react';
-import { Container, Table, Button, Modal, Form, Row, Col } from 'react-bootstrap';
+import { Container, Table, Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap';   
 import PageHeader from '../components/PageHeader';
 import CampoForm from '../components/CampoForm';
 import useColeccion from '../hooks/useColeccion';
 import useFormulario from '../hooks/useFormulario';
 import { useAuth } from '../context/AuthContext';
-import { ROLES } from '../data/db';
+import { ROLES } from '../data/catalogos';
 import { validarUsuario } from '../utils/validaciones';
- 
+import EstadoCarga from '../components/EstadoCarga';
+
 const OPCIONES_ROL = Object.values(ROLES).map((r) => ({ value: r, label: r }));
 const VACIO = { nombre: '', rut: '', correo: '', telefono: '', rol: '', empresa: '', password: '' };
- 
+
 // CRUD de usuarios y roles
 export default function Usuarios() {
   const { usuario } = useAuth();
-  const { datos, agregar, modificar, quitar } = useColeccion('usuarios');
+  const { datos, agregar, modificar, quitar, cargando, error, recargar } = useColeccion('usuarios');  
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
- 
+  const [errorGuardar, setErrorGuardar] = useState('');   
+
   const otros = datos.filter((u) => u.id !== editandoId);
   const { datos: form, errores, handleChange, handleSubmit, reset } = useFormulario(
     VACIO,
-    (d) => validarUsuario(d, otros)
+    (d) => validarUsuario(d, otros, Boolean(editandoId))   
   );
- 
+
   const abrirNuevo = () => {
     setEditandoId(null);
+    setErrorGuardar('');   
     reset(VACIO);
     setModalAbierto(true);
   };
- 
+
   const abrirEdicion = (u) => {
     setEditandoId(u.id);
-    reset(u);
+    setErrorGuardar('');   
+    reset({ ...u, password: '' });   
     setModalAbierto(true);
   };
- 
-  const guardar = (v) => {
+
+  const guardar = async (v) => {
     const registro = { ...v, nombre: v.nombre.trim(), correo: v.correo.trim(), empresa: v.rol === ROLES.CLIENTE ? v.empresa.trim() : '' };
-    if (editandoId) modificar(editandoId, registro);
-    else agregar(registro);
+    const res = editandoId ? await modificar(editandoId, registro) : await agregar(registro);
+    if (!res.ok) {
+      setErrorGuardar(res.error);  
+      return;
+    }
     setModalAbierto(false);
   };
- 
-  const eliminar = (u) => {
-    if (window.confirm(`¿Eliminar la cuenta de ${u.nombre}?`)) quitar(u.id);
+
+  const eliminar = async (u) => {
+    if (!window.confirm(`¿Eliminar la cuenta de ${u.nombre}?`)) return;
+    const res = await quitar(u.id);
+    if (!res.ok) window.alert(res.error);
   };
- 
+
   return (
     <>
       <PageHeader titulo="Usuarios" subtitulo="Cuentas del sistema y sus roles." />
- 
+
       <Container className="my-5">
         <div className="d-flex justify-content-end mb-3">
           <Button variant="accent" onClick={abrirNuevo}><i className="bi bi-plus-lg me-1"></i>Nuevo usuario</Button>
         </div>
- 
+
+        {/* muestra "Cargando..." o el error con boton Reintentar */}
+        <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
+
         <div className="table-responsive bg-white shadow-sm rounded">
           <Table hover className="align-middle mb-0">
             <thead className="table-header-staffpro">
@@ -78,13 +90,15 @@ export default function Usuarios() {
           </Table>
         </div>
       </Container>
- 
+
       <Modal show={modalAbierto} onHide={() => setModalAbierto(false)} centered>
         <Form noValidate onSubmit={handleSubmit(guardar)}>
           <Modal.Header closeButton>
             <Modal.Title as="h2" className="h5">{editandoId ? 'Editar usuario' : 'Nuevo usuario'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            {/* error que devuelve el backend */}
+            {errorGuardar && <Alert variant="danger">{errorGuardar}</Alert>}
             <CampoForm id="nombre" label="Nombre completo" value={form.nombre} onChange={handleChange} error={errores.nombre} />
             <Row>
               <Col md={6}><CampoForm id="rut" label="RUT" placeholder="11.111.111-1" value={form.rut} onChange={handleChange} error={errores.rut} /></Col>
@@ -93,7 +107,9 @@ export default function Usuarios() {
             <CampoForm id="correo" label="Correo electronico" type="email" value={form.correo} onChange={handleChange} error={errores.correo} />
             <Row>
               <Col md={6}><CampoForm id="rol" label="Rol" opciones={OPCIONES_ROL} placeholder="Selecciona un rol" value={form.rol} onChange={handleChange} error={errores.rol} /></Col>
-              <Col md={6}><CampoForm id="password" label="Contraseña" maxLength={10} ayuda="Entre 6 y 10 caracteres." value={form.password} onChange={handleChange} error={errores.password} /></Col>
+              <Col md={6}><CampoForm id="password" label="Contraseña" maxLength={10}
+                ayuda={editandoId ? 'Déjala vacía para no cambiarla.' : 'Entre 6 y 10 caracteres.'}   
+                value={form.password} onChange={handleChange} error={errores.password} /></Col>
             </Row>
             {form.rol === ROLES.CLIENTE && (
               <CampoForm id="empresa" label="Empresa" value={form.empresa} onChange={handleChange} error={errores.empresa} />

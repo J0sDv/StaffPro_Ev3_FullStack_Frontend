@@ -6,8 +6,9 @@ import ResultadoSolicitud from '../components/ResultadoSolicitud';
 import EstadoBadge from '../components/EstadoBadge';
 import useColeccion from '../hooks/useColeccion';
 import { useAuth } from '../context/AuthContext';
-import { DESCRIPCION_ESTADO, TIPOS_CONTRATO } from '../data/db';
+import { DESCRIPCION_ESTADO, TIPOS_CONTRATO } from '../data/catalogos';
 import { codigoSolicitud, formatearFecha } from '../utils/formato';
+import EstadoCarga from '../components/EstadoCarga';
  
 // Una vista para el cliente: pestaña "Nueva solicitud" (con su resultado) y pestaña "Mis solicitudes".
 export default function SolicitudesCliente() {

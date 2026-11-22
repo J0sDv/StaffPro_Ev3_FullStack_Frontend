@@ -1,31 +1,12 @@
-import { listar, crear } from '../data/db';
-import { fechaHoy } from '../utils/formato';
- 
-// Logica de negocio de una solicitud de personal.
-// Si la especialidad no tiene suficientes trabajadores disponibles, devuelve ok:false
-export function registrarSolicitud(datos, usuario) {
-  const cantidad = Number(datos.cantidad);
- 
-  if (datos.especialidad !== 'Otro') {
-    const disponibles = listar('trabajadores').filter(
-      (t) => t.especialidad === datos.especialidad && t.estado === 'Disponible'
-    ).length;
- 
-    if (cantidad > disponibles) {
-      return {
-        ok: false,
-        disponibles,
-        motivo: `Solo hay ${disponibles} trabajador(es) disponible(s) para "${datos.especialidad}" y solicitaste ${cantidad}.`,
-      };
-    }
+import { post } from './api';
+
+// La regla de negocio (no pedir mas personal del disponible) la aplica ms-solicitudes.
+// Aqui solo se traduce la respuesta al formato que ya usa la vista.
+export async function registrarSolicitud(datos) {
+  try {
+    const solicitud = await post('/solicitudes', { ...datos, cantidad: Number(datos.cantidad) });
+    return { ok: true, solicitud };
+  } catch (e) {
+    return { ok: false, motivo: e.message, disponibles: e.datos?.disponibles ?? 0 };
   }
- 
-  const solicitud = crear('solicitudes', {
-    ...datos,
-    cantidad,
-    usuarioId: usuario.id,
-    estado: 'Solicitado',
-    fechaCreacion: fechaHoy(),
-  });
-  return { ok: true, solicitud };
 }

@@ -1,19 +1,31 @@
+import { useEffect, useState } from 'react';
 import { Row, Col, Table } from 'react-bootstrap';
 import StatCard from './StatCard';
-import { listar } from '../data/db';
-import { costosPorTrabajador, totalesPorCliente } from '../utils/reportes';
+import EstadoCarga from './EstadoCarga';
+import { get } from '../services/api';
 import { formatoCLP } from '../utils/formato';
- 
-// Reporte de horas trabajadas y costo estimado segun los marcajes registrados.
+
+// Reporte de horas y costo estimado: el calculo lo hace ms-personal (GET /reportes/horas).
 export default function ReporteHoras() {
-  const filas = costosPorTrabajador(listar('trabajadores'), listar('asistencias'));
-  const porCliente = totalesPorCliente(filas);
+  const [reporte, setReporte] = useState({ filas: [], totales: [] });
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    get('/reportes/horas')
+      .then(setReporte)
+      .catch((e) => setError(e.message))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const { filas, totales: porCliente } = reporte;
   const totalHoras = filas.reduce((suma, f) => suma + f.horas, 0);
   const totalCosto = filas.reduce((suma, f) => suma + f.costo, 0);
  
   return (
     <section className="mt-5">
       <h2 className="h4 fw-bold mb-3">Reporte de horas y costos</h2>
+      <EstadoCarga cargando={cargando} error={error} />
  
       <Row className="g-4 text-center mb-4">
         <Col xs={12} md={4}><StatCard valor={filas.length} titulo="Trabajadores con horas" icono="bi-people" /></Col>
@@ -22,7 +34,9 @@ export default function ReporteHoras() {
       </Row>
  
       {filas.length === 0 ? (
+        !cargando && !error && (
         <p className="text-muted">Aun no hay marcajes completos (entrada y salida) para calcular horas.</p>
+        )
       ) : (
         <>
           <h3 className="h6 fw-bold">Costo por cliente</h3>

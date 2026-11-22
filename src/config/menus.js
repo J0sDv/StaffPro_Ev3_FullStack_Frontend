@@ -1,4 +1,4 @@
-import { ROLES } from '../data/db';
+import { ROLES } from '../data/catalogos';
  
 // Menu de visitantes sin sesion iniciada
 export const MENU_PUBLICO = [

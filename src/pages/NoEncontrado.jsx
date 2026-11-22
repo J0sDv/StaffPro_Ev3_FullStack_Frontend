@@ -1,5 +1,6 @@
 import { Container, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import EstadoCarga from '../components/EstadoCarga';
  
 export default function NoEncontrado() {
   return (

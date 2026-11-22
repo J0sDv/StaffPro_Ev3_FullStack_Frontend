@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { ROLES } from './data/db';
+import { ROLES } from './data/catalogos';
  
 import Layout from './components/Layout';
 import RutaProtegida from './components/RutaProtegida';

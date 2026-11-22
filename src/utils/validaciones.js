@@ -111,7 +111,7 @@ export function validarTrabajador(d, rutsExistentes = []) {
 }
  
 // otros: lista de OTROS usuarios (para detectar RUT o correo duplicados)
-export function validarUsuario(d, otros = []) {
+export function validarUsuario(d, otros = [], editando = false) {
   const e = {};
   if (corto(d.nombre, 3)) e.nombre = 'Ingresa el nombre (minimo 3 caracteres).';
   if (!validarRut(d.rut)) e.rut = 'Ingresa un RUT valido, con guion y digito verificador.';
@@ -120,7 +120,7 @@ export function validarUsuario(d, otros = []) {
   else if (otros.some((u) => u.correo.toLowerCase() === d.correo.trim().toLowerCase())) e.correo = 'Ya existe un usuario con este correo.';
   if (!telefonoValido(d.telefono)) e.telefono = 'Ingresa un telefono valido (solo numeros, espacios y +).';
   if (vacio(d.rol)) e.rol = 'Selecciona un rol.';
-  if (!passwordValida(d.password)) e.password = 'La contraseña debe tener entre 6 y 10 caracteres.';
+  if ((!editando || d.password) && !passwordValida(d.password)) e.password = 'La contraseña debe tener entre 6 y 10 caracteres.';
   return e;
 }
 

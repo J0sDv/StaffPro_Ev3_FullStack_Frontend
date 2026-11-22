@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Container, Row, Col, Form, Button, Card, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card, Modal, Alert } from 'react-bootstrap';   // CAMBIA: se agrega Alert
 import PageHeader from '../components/PageHeader';
 import TablaTrabajadores from '../components/TablaTrabajadores';
 import CampoForm from '../components/CampoForm';
@@ -7,57 +7,66 @@ import useColeccion from '../hooks/useColeccion';
 import useFormulario from '../hooks/useFormulario';
 import { ESPECIALIDADES } from '../data/contenido';
 import { validarTrabajador } from '../utils/validaciones';
- 
+import EstadoCarga from '../components/EstadoCarga';
+
 const OPCIONES_ESPECIALIDAD = ESPECIALIDADES.map((e) => ({ value: e, label: e }));
 const OPCIONES_ESTADO = [{ value: 'Disponible', label: 'Disponible' }, { value: 'En turno', label: 'En turno' }];
 const VACIO = { nombre: '', rut: '', especialidad: '', valorHora: '', cliente: 'Sin asignar', estado: 'Disponible' };
- 
+
 // CRUD completo en una sola pagina
 export default function Trabajadores() {
-  const { datos, agregar, modificar, quitar } = useColeccion('trabajadores');
+  const { datos, agregar, modificar, quitar, cargando, error, recargar } = useColeccion('trabajadores');   // CAMBIA
   const [busqueda, setBusqueda] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
- 
+  const [errorGuardar, setErrorGuardar] = useState('');   // NUEVO
+
   // Al validar, se excluye al trabajador que se esta editando para no marcar su propio RUT como duplicado
   const otrosRuts = datos.filter((t) => t.id !== editandoId).map((t) => t.rut);
   const { datos: form, errores, handleChange, handleSubmit, reset } = useFormulario(
     VACIO,
     (d) => validarTrabajador(d, otrosRuts)
   );
- 
+
   const texto = busqueda.trim().toLowerCase();
   const filtrados = datos.filter((t) =>
     [t.nombre, t.rut, t.especialidad].some((campo) => campo.toLowerCase().includes(texto))
   );
- 
+
   const abrirNuevo = () => {
     setEditandoId(null);
+    setErrorGuardar('');  
     reset(VACIO);
     setModalAbierto(true);
   };
- 
+
   const abrirEdicion = (t) => {
     setEditandoId(t.id);
+    setErrorGuardar('');  
     reset(t);
     setModalAbierto(true);
   };
- 
-  const guardar = (v) => {
+
+  const guardar = async (v) => {
     const registro = { ...v, nombre: v.nombre.trim(), rut: v.rut.trim(), valorHora: Number(v.valorHora), cliente: v.cliente.trim() || 'Sin asignar' };
-    if (editandoId) modificar(editandoId, registro);
-    else agregar(registro);
+    const res = editandoId ? await modificar(editandoId, registro) : await agregar(registro);
+    if (!res.ok) {
+      setErrorGuardar(res.error);  
+      return;
+    }
     setModalAbierto(false);
   };
- 
-  const eliminar = (t) => {
-    if (window.confirm(`¿Eliminar a ${t.nombre}? Esta accion no se puede deshacer.`)) quitar(t.id);
+
+  const eliminar = async (t) => {
+    if (!window.confirm(`¿Eliminar a ${t.nombre}? Esta accion no se puede deshacer.`)) return;
+    const res = await quitar(t.id);
+    if (!res.ok) window.alert(res.error);
   };
- 
+
   return (
     <>
       <PageHeader titulo="Trabajadores" subtitulo="Catalogo de personal externo de StaffPro." />
- 
+
       <Container className="my-5">
         <Row className="g-3 mb-4 align-items-end">
           <Col md={6} lg={4}>
@@ -68,7 +77,10 @@ export default function Trabajadores() {
             <Button variant="accent" onClick={abrirNuevo}><i className="bi bi-plus-lg me-1"></i>Nuevo trabajador</Button>
           </Col>
         </Row>
- 
+
+        {/*muestra "Cargando..." o el error con boton Reintentar */}
+        <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
+
         <Card className="shadow-sm border-0">
           <Card.Body className="p-0">
             <TablaTrabajadores
@@ -83,13 +95,15 @@ export default function Trabajadores() {
           </Card.Body>
         </Card>
       </Container>
- 
+
       <Modal show={modalAbierto} onHide={() => setModalAbierto(false)} centered>
         <Form noValidate onSubmit={handleSubmit(guardar)}>
           <Modal.Header closeButton>
             <Modal.Title as="h2" className="h5">{editandoId ? 'Editar trabajador' : 'Nuevo trabajador'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            {/*error que devuelve el backend */}
+            {errorGuardar && <Alert variant="danger">{errorGuardar}</Alert>}
             <CampoForm id="nombre" label="Nombre completo" value={form.nombre} onChange={handleChange} error={errores.nombre} />
             <CampoForm id="rut" label="RUT" placeholder="11.111.111-1" value={form.rut} onChange={handleChange} error={errores.rut} />
             <CampoForm id="especialidad" label="Especialidad" opciones={OPCIONES_ESPECIALIDAD} placeholder="Selecciona una especialidad"

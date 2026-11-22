@@ -7,11 +7,13 @@ import useColeccion from '../hooks/useColeccion';
 import { useAuth } from '../context/AuthContext';
 import { fechaHoy, horaAhora } from '../utils/formato';
 import { limpiarRut, validarMarcaje } from '../utils/validaciones';
+import EstadoCarga from '../components/EstadoCarga';
  
 // Pensada para celular
 export default function Asistencia() {
   const { usuario } = useAuth();
-  const { datos: marcajes, agregar } = useColeccion('asistencias');
+  const { datos: marcajes, agregar, cargando, error, recargar } = useColeccion('asistencias');
+  const [errorMarcaje, setErrorMarcaje] = useState('');
   const [tipo, setTipo] = useState('Entrada');
   const [confirmacion, setConfirmacion] = useState('');
  
@@ -20,10 +22,16 @@ export default function Asistencia() {
     validarMarcaje
   );
  
-  const registrar = (valores) => {
-    agregar({ rut: valores.rut.trim(), fecha: valores.fecha, hora: valores.hora, tipo });
-    setConfirmacion(`Marcaje de ${tipo.toLowerCase()} registrado correctamente a las ${valores.hora} hrs.`);
-    reset({ rut: usuario.rut, fecha: fechaHoy(), hora: horaAhora() });
+  const registrar = async (valores) => {
+  const res = await agregar({ rut: valores.rut.trim(), fecha: valores.fecha, hora: valores.hora, tipo });
+  if (!res.ok) {
+    setConfirmacion('');
+    setErrorMarcaje(res.error);
+    return;
+  }
+  setErrorMarcaje('');
+  setConfirmacion(`Marcaje de ${tipo.toLowerCase()} registrado correctamente a las ${valores.hora} hrs.`);
+  reset({ rut: usuario.rut, fecha: fechaHoy(), hora: horaAhora() });
   };
  
   const misMarcajes = marcajes
@@ -41,6 +49,7 @@ export default function Asistencia() {
             <Card as="article" className="shadow-sm border-0 form-card mb-4">
               <Card.Body className="p-4">
                 {confirmacion && <Alert variant="success">{confirmacion}</Alert>}
+                {errorMarcaje && <Alert variant="danger">{errorMarcaje}</Alert>}
  
                 <Form noValidate onSubmit={handleSubmit(registrar)}>
                   <CampoForm id="rut" label="RUT" size="lg" value={datos.rut} onChange={handleChange} error={errores.rut} />
@@ -66,6 +75,7 @@ export default function Asistencia() {
             </Card>
  
             <h2 className="h6 text-uppercase text-muted fw-bold mb-3">Mis ultimos marcajes</h2>
+            <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
             {misMarcajes.length === 0 ? (
               <p className="text-muted small">Aun no hay marcajes registrados.</p>
             ) : (

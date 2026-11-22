@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import BeneficioCard from '../components/BeneficioCard';
 import { ESTADISTICAS_HOME, PASOS, BENEFICIOS, EQUIPO, TESTIMONIOS } from '../data/contenido';
+import EstadoCarga from '../components/EstadoCarga';
  
 export default function Inicio() {
   const { usuario } = useAuth();

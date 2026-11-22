@@ -3,7 +3,7 @@ import CampoForm from './CampoForm';
 import useFormulario from '../hooks/useFormulario';
 import { useAuth } from '../context/AuthContext';
 import { registrarSolicitud } from '../services/solicitudes';
-import { TIPOS_CONTRATO } from '../data/db';
+import { TIPOS_CONTRATO } from '../data/catalogos';
 import { ESPECIALIDADES } from '../data/contenido';
 import { fechaHoy } from '../utils/formato';
 import { validarSolicitud } from '../utils/validaciones';
@@ -35,7 +35,7 @@ export default function FormSolicitud({ onResultado }) {
  
   const { datos, errores, handleChange, handleSubmit, reset } = useFormulario(inicial, (d) => validarSolicitud(d, hoy));
  
-  const enviar = (valores) => onResultado(registrarSolicitud(valores, usuario));
+  const enviar = async (valores) => onResultado(await registrarSolicitud(valores));
  
   return (
     <Card as="article" className="shadow-sm border-0 form-card">

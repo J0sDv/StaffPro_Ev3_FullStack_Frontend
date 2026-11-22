@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import PaginaAcceso from '../components/PaginaAcceso';
 import FormLogin from '../components/FormLogin';
 import FormRegistro from '../components/FormRegistro';
+import EstadoCarga from '../components/EstadoCarga';
  
 // Una sola vista para iniciar sesion y crear cuenta
 export default function Acceso() {

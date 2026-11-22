@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
@@ -5,27 +6,26 @@ import ReporteHoras from '../components/ReporteHoras';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
 import { MENUS } from '../config/menus';
-import { listar, ROLES } from '../data/db';
+import { ROLES } from '../data/catalogos';
+import { cargarDatosPanel } from '../services/panel';
 import { estadisticasPorRol } from '../utils/estadisticas';
- 
+
 // Panel de inicio
 export default function Dashboard() {
   const { usuario } = useAuth();
- 
-  const datos = {
-    usuarios: listar('usuarios'),
-    trabajadores: listar('trabajadores'),
-    solicitudes: listar('solicitudes'),
-    asistencias: listar('asistencias'),
-  };
- 
+  const [datos, setDatos] = useState({});
+
+  useEffect(() => {
+    cargarDatosPanel(usuario).then(setDatos);
+  }, [usuario.id, usuario.rol, usuario.empresa]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const estadisticas = estadisticasPorRol(usuario.rol, usuario, datos);
   const accesos = (MENUS[usuario.rol] ?? []).filter((m) => m.descripcion);
- 
+
   return (
     <>
       <PageHeader titulo={`Hola, ${usuario.nombre}`} subtitulo={`Panel de ${usuario.rol}`} />
- 
+
       <Container className="my-5">
         <Row className="g-4 text-center mb-5">
           {estadisticas.map((e) => (
@@ -34,7 +34,7 @@ export default function Dashboard() {
             </Col>
           ))}
         </Row>
- 
+
         {accesos.length > 0 && <h2 className="h5 fw-bold mb-3">Accesos rapidos</h2>}
         <Row className="g-4">
           {accesos.map((a) => (
@@ -49,12 +49,11 @@ export default function Dashboard() {
             </Col>
           ))}
         </Row>
- 
+
         {/* Reporte de horas y costos solo para RR.HH. y Administrador */}
         {[ROLES.RRHH, ROLES.ADMIN].includes(usuario.rol) && <ReporteHoras />}
       </Container>
     </>
   );
 }
-
 

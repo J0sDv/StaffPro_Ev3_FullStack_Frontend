@@ -1,5 +1,5 @@
 import { Card, Row, Col, Button } from 'react-bootstrap';
-import { TIPOS_CONTRATO } from '../data/db';
+import { TIPOS_CONTRATO } from '../data/catalogos';
 import { codigoSolicitud, formatearFecha } from '../utils/formato';
  
 // Muestra el resultado de enviar una solicitud: registrada (ok) o con error (disponibilidad insuficiente).

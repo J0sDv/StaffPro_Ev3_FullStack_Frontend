@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Row, Col, Form, Table } from 'react-bootstrap';
 import useColeccion from '../hooks/useColeccion';
-import { ESTADOS_SOLICITUD } from '../data/db';
+import { ESTADOS_SOLICITUD } from '../data/catalogos';
 import { codigoSolicitud, formatearFecha } from '../utils/formato';
  
 // El coordinador revisa las solicitudes de los clientes y actualiza su estado.

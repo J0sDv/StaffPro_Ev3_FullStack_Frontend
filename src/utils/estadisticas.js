@@ -1,4 +1,4 @@
-import { ROLES } from '../data/db';
+import { ROLES } from '../data/catalogos';
 import { limpiarRut } from './validaciones';
  
 // Devuelve las tarjetas de metricas que se muestran en el Panel segun el rol.
@@ -47,7 +47,7 @@ export function estadisticasPorRol(rol, usuario, datos) {
         { titulo: 'Mis solicitudes', valor: mias.length, icono: 'bi-file-earmark-text' },
         { titulo: 'En servicio', valor: mias.filter((s) => s.estado === 'En servicio').length, icono: 'bi-person-workspace' },
         { titulo: 'Finalizadas', valor: mias.filter((s) => s.estado === 'Finalizado').length, icono: 'bi-check-circle' },
-        { titulo: 'Personal asignado', valor: trabajadores.filter((t) => t.cliente === usuario?.empresa).length, icono: 'bi-people' },
+        { titulo: 'Personal asignado', valor: datos.personalAsignado ?? 0, icono: 'bi-people' },
       ];
     }
  
