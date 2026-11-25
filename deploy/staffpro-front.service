@@ -1,0 +1,15 @@
+[Unit]
+Description=StaffPro Frontend
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/opt/staffpro/front-spring
+EnvironmentFile=/etc/staffpro.env
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/staffpro/front-spring/front-spring.jar
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
