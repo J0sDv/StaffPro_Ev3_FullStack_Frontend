@@ -5,19 +5,16 @@ import FormSolicitud from '../components/FormSolicitud';
 import ResultadoSolicitud from '../components/ResultadoSolicitud';
 import EstadoBadge from '../components/EstadoBadge';
 import useColeccion from '../hooks/useColeccion';
-import { useAuth } from '../context/AuthContext';
 import { DESCRIPCION_ESTADO, TIPOS_CONTRATO } from '../data/catalogos';
 import { codigoSolicitud, formatearFecha } from '../utils/formato';
 import EstadoCarga from '../components/EstadoCarga';
  
 // Una vista para el cliente: pestaña "Nueva solicitud" (con su resultado) y pestaña "Mis solicitudes".
 export default function SolicitudesCliente() {
-  const { usuario } = useAuth();
-  const { datos, recargar } = useColeccion('solicitudes');
   const [pestana, setPestana] = useState('nueva');
   const [resultado, setResultado] = useState(null);
+  const { datos: mias, cargando, error, recargar } = useColeccion('solicitudes');
  
-  const mias = datos.filter((s) => s.usuarioId === usuario.id);
  
   const alRecibirResultado = (res) => {
     setResultado(res);
@@ -43,8 +40,9 @@ export default function SolicitudesCliente() {
           </Tab>
  
           <Tab eventKey="mias" title={`Mis solicitudes (${mias.length})`}>
+            <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
             {mias.length === 0 ? (
-              <p className="text-center text-muted py-5">Aun no has realizado solicitudes.</p>
+              !cargando && !error && <p className="text-center text-muted py-5">Aun no has realizado solicitudes.</p>
             ) : (
               <div className="table-responsive bg-white shadow-sm rounded">
                 <Table hover className="align-middle mb-0">

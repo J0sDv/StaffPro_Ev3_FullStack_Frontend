@@ -1,18 +1,33 @@
 import { useState } from 'react';
-import { Row, Col, Form, Table } from 'react-bootstrap';
+import { Row, Col, Form, Table, Alert } from 'react-bootstrap';
+import EstadoCarga from './EstadoCarga';
 import useColeccion from '../hooks/useColeccion';
+import { put } from '../services/api';
 import { ESTADOS_SOLICITUD } from '../data/catalogos';
 import { codigoSolicitud, formatearFecha } from '../utils/formato';
- 
+
 // El coordinador revisa las solicitudes de los clientes y actualiza su estado.
 export default function PanelSolicitudes() {
-  const { datos, modificar } = useColeccion('solicitudes');
+  const { datos, cargando, error, recargar } = useColeccion('solicitudes');
   const [filtro, setFiltro] = useState('todos');
- 
+  const [errorEstado, setErrorEstado] = useState('');
   const visibles = datos.filter((s) => filtro === 'todos' || s.estado === filtro);
- 
+
+  const cambiarEstado = async (id, estado) => {
+    try {
+      await put(`/solicitudes/${id}/estado`, { estado });
+      setErrorEstado('');
+    } catch (e) {
+      setErrorEstado(e.message);
+    }
+    await recargar();   // vuelve a leer: si el backend rechazo el cambio, el selector regresa al valor real
+  };
+
   return (
     <>
+      {errorEstado && <Alert variant="danger">{errorEstado}</Alert>}
+      <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
+
       <Row className="mb-4">
         <Col md={4}>
           <Form.Label htmlFor="filtroEstadoSolicitud">Filtrar por estado</Form.Label>
@@ -22,9 +37,9 @@ export default function PanelSolicitudes() {
           </Form.Select>
         </Col>
       </Row>
- 
+
       {visibles.length === 0 ? (
-        <p className="text-center text-muted py-5">No hay solicitudes para mostrar.</p>
+        !cargando && !error && <p className="text-center text-muted py-5">No hay solicitudes para mostrar.</p>
       ) : (
         <div className="table-responsive bg-white shadow-sm rounded">
           <Table hover className="align-middle mb-0">
@@ -41,7 +56,7 @@ export default function PanelSolicitudes() {
                   <td className="text-nowrap">{formatearFecha(s.fechaInicio)} - {formatearFecha(s.fechaTermino)}</td>
                   <td style={{ minWidth: 170 }}>
                     <Form.Select size="sm" aria-label={`Estado de ${codigoSolicitud(s.id)}`} value={s.estado}
-                      onChange={(e) => modificar(s.id, { estado: e.target.value })}>
+                      onChange={(e) => cambiarEstado(s.id, e.target.value)}>
                       {ESTADOS_SOLICITUD.map((e) => <option key={e} value={e}>{e}</option>)}
                     </Form.Select>
                   </td>
