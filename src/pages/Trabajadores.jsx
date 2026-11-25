@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Container, Row, Col, Form, Button, Card, Modal, Alert } from 'react-bootstrap';   // CAMBIA: se agrega Alert
+import { Container, Row, Col, Form, Button, Card, Modal, Alert } from 'react-bootstrap';
 import PageHeader from '../components/PageHeader';
 import TablaTrabajadores from '../components/TablaTrabajadores';
 import CampoForm from '../components/CampoForm';
@@ -8,6 +8,7 @@ import useFormulario from '../hooks/useFormulario';
 import { ESPECIALIDADES } from '../data/contenido';
 import { validarTrabajador } from '../utils/validaciones';
 import EstadoCarga from '../components/EstadoCarga';
+import Permiso from '../components/Permiso';
 
 const OPCIONES_ESPECIALIDAD = ESPECIALIDADES.map((e) => ({ value: e, label: e }));
 const OPCIONES_ESTADO = [{ value: 'Disponible', label: 'Disponible' }, { value: 'En turno', label: 'En turno' }];
@@ -15,11 +16,11 @@ const VACIO = { nombre: '', rut: '', especialidad: '', valorHora: '', cliente: '
 
 // CRUD completo en una sola pagina
 export default function Trabajadores() {
-  const { datos, agregar, modificar, quitar, cargando, error, recargar } = useColeccion('trabajadores');   // CAMBIA
+  const { datos, agregar, modificar, quitar, cargando, error, recargar } = useColeccion('trabajadores');
   const [busqueda, setBusqueda] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
-  const [errorGuardar, setErrorGuardar] = useState('');   // NUEVO
+  const [errorGuardar, setErrorGuardar] = useState('');
 
   // Al validar, se excluye al trabajador que se esta editando para no marcar su propio RUT como duplicado
   const otrosRuts = datos.filter((t) => t.id !== editandoId).map((t) => t.rut);
@@ -35,14 +36,14 @@ export default function Trabajadores() {
 
   const abrirNuevo = () => {
     setEditandoId(null);
-    setErrorGuardar('');  
+    setErrorGuardar('');
     reset(VACIO);
     setModalAbierto(true);
   };
 
   const abrirEdicion = (t) => {
     setEditandoId(t.id);
-    setErrorGuardar('');  
+    setErrorGuardar('');
     reset(t);
     setModalAbierto(true);
   };
@@ -51,7 +52,7 @@ export default function Trabajadores() {
     const registro = { ...v, nombre: v.nombre.trim(), rut: v.rut.trim(), valorHora: Number(v.valorHora), cliente: v.cliente.trim() || 'Sin asignar' };
     const res = editandoId ? await modificar(editandoId, registro) : await agregar(registro);
     if (!res.ok) {
-      setErrorGuardar(res.error);  
+      setErrorGuardar(res.error);
       return;
     }
     setModalAbierto(false);
@@ -74,11 +75,13 @@ export default function Trabajadores() {
             <Form.Control id="buscarTrabajadores" type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
           </Col>
           <Col className="text-md-end">
-            <Button variant="accent" onClick={abrirNuevo}><i className="bi bi-plus-lg me-1"></i>Nuevo trabajador</Button>
+            {/* el boton solo aparece si el rol puede editar trabajadores */}
+            <Permiso accion="trabajadores.editar">
+              <Button variant="accent" onClick={abrirNuevo}><i className="bi bi-plus-lg me-1"></i>Nuevo trabajador</Button>
+            </Permiso>
           </Col>
         </Row>
 
-        {/*muestra "Cargando..." o el error con boton Reintentar */}
         <EstadoCarga cargando={cargando} error={error} onReintentar={recargar} />
 
         <Card className="shadow-sm border-0">
@@ -86,10 +89,12 @@ export default function Trabajadores() {
             <TablaTrabajadores
               trabajadores={filtrados}
               renderAcciones={(t) => (
-                <>
-                  <Button size="sm" variant="outline-accent" className="me-2" onClick={() => abrirEdicion(t)}>Editar</Button>
-                  <Button size="sm" variant="outline-danger" onClick={() => eliminar(t)}>Eliminar</Button>
-                </>
+                <Permiso accion="trabajadores.editar" alternativa={<span className="text-muted small">Solo lectura</span>}>
+                  <>
+                    <Button size="sm" variant="outline-accent" className="me-2" onClick={() => abrirEdicion(t)}>Editar</Button>
+                    <Button size="sm" variant="outline-danger" onClick={() => eliminar(t)}>Eliminar</Button>
+                  </>
+                </Permiso>
               )}
             />
           </Card.Body>
@@ -102,7 +107,6 @@ export default function Trabajadores() {
             <Modal.Title as="h2" className="h5">{editandoId ? 'Editar trabajador' : 'Nuevo trabajador'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {/*error que devuelve el backend */}
             {errorGuardar && <Alert variant="danger">{errorGuardar}</Alert>}
             <CampoForm id="nombre" label="Nombre completo" value={form.nombre} onChange={handleChange} error={errores.nombre} />
             <CampoForm id="rut" label="RUT" placeholder="11.111.111-1" value={form.rut} onChange={handleChange} error={errores.rut} />

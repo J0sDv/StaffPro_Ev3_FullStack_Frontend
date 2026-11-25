@@ -11,7 +11,7 @@ export default function RutaProtegida({ roles, children }) {
   }
   // Si el rol no tiene permiso, vuelve a su panel
   if (roles && !roles.includes(usuario.rol)) {
-    return <Navigate to="/panel" replace />;
+    return <Navigate to="/panel" replace state={{ sinPermiso: true }} />;
   }
   return children;
 }

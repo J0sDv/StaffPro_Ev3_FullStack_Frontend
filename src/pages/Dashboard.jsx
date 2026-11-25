@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
+import { Link, useLocation } from 'react-router-dom';   
 import PageHeader from '../components/PageHeader';
 import ReporteHoras from '../components/ReporteHoras';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
 import { MENUS } from '../config/menus';
-import { ROLES } from '../data/catalogos';
 import { cargarDatosPanel } from '../services/panel';
 import { estadisticasPorRol } from '../utils/estadisticas';
+import Permiso from '../components/Permiso';
 
 // Panel de inicio
 export default function Dashboard() {
   const { usuario } = useAuth();
+  const location = useLocation();   
   const [datos, setDatos] = useState({});
 
   useEffect(() => {
@@ -27,6 +28,11 @@ export default function Dashboard() {
       <PageHeader titulo={`Hola, ${usuario.nombre}`} subtitulo={`Panel de ${usuario.rol}`} />
 
       <Container className="my-5">
+        {/* aviso cuando RutaProtegida nos devolvio aqui por falta de permiso */}
+        {location.state?.sinPermiso && (
+          <Alert variant="warning">No tienes permiso para acceder a esa sección.</Alert>
+        )}
+
         <Row className="g-4 text-center mb-5">
           {estadisticas.map((e) => (
             <Col key={e.titulo} xs={6} lg={3}>
@@ -51,9 +57,8 @@ export default function Dashboard() {
         </Row>
 
         {/* Reporte de horas y costos solo para RR.HH. y Administrador */}
-        {[ROLES.RRHH, ROLES.ADMIN].includes(usuario.rol) && <ReporteHoras />}
+        <Permiso accion="reportes.ver"><ReporteHoras /></Permiso>
       </Container>
     </>
   );
 }
-

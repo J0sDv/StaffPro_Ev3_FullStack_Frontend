@@ -1,13 +1,13 @@
 import { ROLES } from '../data/catalogos';
- 
+
 // Menu de visitantes sin sesion iniciada
 export const MENU_PUBLICO = [
   { to: '/', label: 'Inicio' },
 ];
- 
+
 const INICIO = { to: '/', label: 'Inicio' };
 const PANEL = { to: '/panel', label: 'Panel' };
- 
+
 // Menu por rol.
 export const MENUS = {
   [ROLES.CLIENTE]: [
@@ -21,12 +21,16 @@ export const MENUS = {
   [ROLES.COORDINADOR]: [
     INICIO, PANEL,
     { to: '/gestion', label: 'Gestion de Personal', icono: 'bi-diagram-3', descripcion: 'Actualiza solicitudes y asigna trabajadores a clientes.' },
+    { to: '/trabajadores', label: 'Trabajadores', icono: 'bi-person-vcard', descripcion: 'Consulta el catalogo de trabajadores.' },
   ],
   [ROLES.TRABAJADOR]: [
     INICIO, PANEL,
     { to: '/asistencia', label: 'Marcar Asistencia', icono: 'bi-phone', descripcion: 'Registra tu entrada o salida desde el celular.' },
   ],
-  [ROLES.RRHH]: [INICIO, PANEL],
+  [ROLES.RRHH]: [
+    INICIO, PANEL,
+    { to: '/trabajadores', label: 'Trabajadores', icono: 'bi-person-vcard', descripcion: 'Consulta el catalogo de trabajadores.' },
+  ],
   [ROLES.ADMIN]: [
     INICIO, PANEL,
     { to: '/usuarios', label: 'Usuarios', icono: 'bi-person-gear', descripcion: 'Crea, edita y elimina cuentas y roles.' },
