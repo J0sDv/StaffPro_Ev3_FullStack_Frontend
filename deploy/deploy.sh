@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uso (en el terminal de EC2):  bash ~/frontend/deploy/deploy.sh
 set -e
-REPO="$HOME/frontend"
+REPO="$HOME/StaffPro_Ev3_FullStack_Frontend"
 export MAVEN_OPTS="-Xmx300m"
 
 cd "$REPO"
